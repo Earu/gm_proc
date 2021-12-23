@@ -1,0 +1,5 @@
+﻿  main.cpp
+C:\Users\Earu\Documents\GitHub\gm_proc\source\main.cpp(23,25): warning C4244: 'argument': conversion from 'INT_PTR' to 'double', possible loss of data
+C:\Users\Earu\Documents\GitHub\gm_proc\source\main.cpp(55,1): warning C4100: 'LUA': unreferenced formal parameter
+     Creating library x86_64\Debug\gmsv_proc_win64.lib and object x86_64\Debug\gmsv_proc_win64.exp
+  gmsv_proc.vcxproj -> C:\Users\Earu\Documents\GitHub\gm_proc\projects\windows\vs2019\x86_64\Debug\gmsv_proc_win64.dll

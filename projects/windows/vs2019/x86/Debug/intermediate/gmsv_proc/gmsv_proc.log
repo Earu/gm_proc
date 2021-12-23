@@ -1,0 +1,4 @@
+﻿  main.cpp
+C:\Users\Earu\Documents\GitHub\gm_proc\source\main.cpp(32,1): warning C4100: 'LUA': unreferenced formal parameter
+     Creating library x86\Debug\gmsv_proc_win32.lib and object x86\Debug\gmsv_proc_win32.exp
+  gmsv_proc.vcxproj -> C:\Users\Earu\Documents\GitHub\gm_proc\projects\windows\vs2019\x86\Debug\gmsv_proc_win32.dll
