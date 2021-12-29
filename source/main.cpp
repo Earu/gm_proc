@@ -71,8 +71,73 @@ int GetProcessName(DWORD pid, LPSTR fname, DWORD sz)
     }
 
     return err;
-}   
+}  
+
+struct HandleData {
+    unsigned long process_id;
+    HWND window_handle;
+};
+
+BOOL IsMainWindow(HWND handle)
+{
+    return GetWindow(handle, GW_OWNER) == (HWND)0 && IsWindowVisible(handle);
+}
+
+BOOL CALLBACK EnumWindowsCallback(HWND handle, LPARAM lParam)
+{
+    HandleData& data = *(HandleData*)lParam;
+    unsigned long process_id = 0;
+    GetWindowThreadProcessId(handle, &process_id);
+    if (data.process_id != process_id || !IsMainWindow(handle))
+        return TRUE;
+
+    data.window_handle = handle;
+    return FALSE;
+}
+
+HWND FindMainWindow(DWORD pid)
+{
+    HandleData data;
+    data.process_id = pid;
+    data.window_handle = 0;
+    EnumWindows(EnumWindowsCallback, (LPARAM)&data);
+    return data.window_handle;
+}
 #endif
+
+LUA_FUNCTION(BringToFront)
+{
+#ifdef _WIN32
+    int pid = static_cast<int>(LUA->CheckNumber());
+    HWND winHandle = FindMainWindow(pid);
+    if (winHandle)
+    {
+        SetWindowPos(winHandle, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+        LUA->PushBool(true);
+        return 1;
+    }
+#endif
+
+    LUA->PushBool(false);
+    return 1;
+}
+
+LUA_FUNCTION(BringToBack)
+{
+#ifdef _WIN32
+    int pid = static_cast<int>(LUA->CheckNumber());
+    HWND winHandle = FindMainWindow(pid);
+    if (winHandle)
+    {
+        SetWindowPos(winHandle, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+        LUA->PushBool(true);
+        return 1;
+    }
+#endif
+
+    LUA->PushBool(false);
+    return 1;
+}
 
 LUA_FUNCTION(IsFromGmod) 
 {
@@ -82,14 +147,20 @@ LUA_FUNCTION(IsFromGmod)
     DWORD curProcessPid = GetCurrentProcessId();
     char curProcName[MAX_PATH] = { 0 };
     int err = GetProcessName(curProcessPid, curProcName, MAX_PATH);
-    if (err != 0) return false;
+    if (err != 0) {
+        LUA->PushBool(false);
+        return 1;
+    }
 
     std::string gmodName = std::string(curProcName);
 
     DWORD parentPid = GetParentPID(pid);
     char targetProcessName[MAX_PATH] = { 0 };
     err = GetProcessName(parentPid, targetProcessName, MAX_PATH);
-    if (err != 0) return false;
+    if (err != 0) {
+        LUA->PushBool(false);
+        return 1;
+    }
 
     bool isGmodProc = std::string(targetProcessName).compare(gmodName);
     LUA->PushBool(isGmodProc);
@@ -97,7 +168,7 @@ LUA_FUNCTION(IsFromGmod)
 #endif
 
     LUA->PushBool(false);
-    return 0;
+    return 1;
 }
 
 std::vector<int> runningPids = std::vector<int>();
@@ -118,7 +189,7 @@ LUA_FUNCTION(StartProcess)
     exInfo.hwnd = NULL;
     exInfo.cbSize = sizeof exInfo;
     
-    if (ShellExecuteExA(&exInfo)) {
+    if (ShellExecuteExA(&exInfo) && exInfo.hProcess) {
         DWORD pid = GetProcessId(exInfo.hProcess);
         runningPids.push_back(pid);
         LUA->PushBool(true);
@@ -157,7 +228,7 @@ LUA_FUNCTION(GetRunningPIDs)
     return 1;
 }
 
-LUA_FUNCTION(TerminateProcess) 
+LUA_FUNCTION(EndProcess) 
 {
 #ifdef _WIN32
     const bool exitCodeSpecified = LUA->Top() >= 2;
@@ -209,14 +280,26 @@ LUA_FUNCTION(IsProcessRunning)
 {
 #ifdef _WIN32
     int pid = static_cast<int>(LUA->CheckNumber(-1));
-    HANDLE process = OpenProcess(PROCESS_TERMINATE, FALSE, pid);
-    bool isRunning = GetExitCodeProcess(process, 0) == STILL_ACTIVE;
+    HANDLE process = OpenProcess(SYNCHRONIZE, FALSE, pid);
+    DWORD ret = WaitForSingleObject(process, 0);
+    CloseHandle(process);
 
+    bool isRunning = ret == WAIT_TIMEOUT;
     LUA->PushBool(isRunning);
     return 1;
 #endif
 
     LUA->PushBool(false);
+    return 1;
+}
+
+LUA_FUNCTION(GetGmodPID) {
+#ifdef _WIN32
+    int pid = GetCurrentProcessId();
+#else
+    int pid = -1;
+#endif
+    LUA->PushNumber(pid);
     return 1;
 }
 
@@ -229,7 +312,7 @@ GMOD_MODULE_OPEN()
             LUA->PushCFunction(StartProcess);
             LUA->SetField(-2, "Start");
 
-            LUA->PushCFunction(TerminateProcess);
+            LUA->PushCFunction(EndProcess);
             LUA->SetField(-2, "Terminate");
 
             LUA->PushCFunction(IsProcessRunning);
@@ -241,8 +324,17 @@ GMOD_MODULE_OPEN()
             LUA->PushCFunction(IsFromGmod);
             LUA->SetField(-2, "IsFromGmod");
 
+            LUA->PushCFunction(GetGmodPID);
+            LUA->SetField(-2, "GetGmodPID");
+
             LUA->PushCFunction(GetRunningPIDs);
             LUA->SetField(-2, "GetRunningPIDs");
+
+            LUA->PushCFunction(BringToFront);
+            LUA->SetField(-2, "BringToFront");
+
+            LUA->PushCFunction(BringToBack);
+            LUA->SetField(-2, "BringToBack");
 
         LUA->SetField(-2, "Process");
         
