@@ -112,7 +112,14 @@ LUA_FUNCTION(BringToFront)
     HWND winHandle = FindMainWindow(pid);
     if (winHandle)
     {
-        SetWindowPos(winHandle, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+        BOOL winPos = SetWindowPos(winHandle, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+        BOOL winShow = ShowWindow(winHandle, SW_NORMAL); // make sure to de-minimize the window
+        if (winPos == FALSE || winShow == FALSE) 
+        {
+            LUA->PushBool(false);
+            return 1;
+        }
+
         LUA->PushBool(true);
         return 1;
     }
