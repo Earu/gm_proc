@@ -99,7 +99,7 @@
     <IntDir>x86_64\ReleaseWithSymbols\intermediate\gmsv_proc\</IntDir>
     <TargetName>gmsv_proc_win64</TargetName>
     <TargetExt>.dll</TargetExt>
-    <IncludePath>..\..\..\..\..\..\..\Documents\GitHub\garrysmod_common\include;..\..\..\..\..\..\..\Documents\GitHub\garrysmod_common\helpers\include;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\..\garrysmod_common\include;..\..\..\..\garrysmod_common\helpers\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseWithSymbols|Win32'">
     <LinkIncremental>true</LinkIncremental>
@@ -107,7 +107,7 @@
     <IntDir>x86\ReleaseWithSymbols\intermediate\gmsv_proc\</IntDir>
     <TargetName>gmsv_proc_win32</TargetName>
     <TargetExt>.dll</TargetExt>
-    <IncludePath>..\..\..\..\..\..\..\Documents\GitHub\garrysmod_common\include;..\..\..\..\..\..\..\Documents\GitHub\garrysmod_common\helpers\include;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\..\garrysmod_common\include;..\..\..\..\garrysmod_common\helpers\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -115,7 +115,7 @@
     <IntDir>x86_64\Release\intermediate\gmsv_proc\</IntDir>
     <TargetName>gmsv_proc_win64</TargetName>
     <TargetExt>.dll</TargetExt>
-    <IncludePath>..\..\..\..\..\..\..\Documents\GitHub\garrysmod_common\include;..\..\..\..\..\..\..\Documents\GitHub\garrysmod_common\helpers\include;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\..\garrysmod_common\include;..\..\..\..\garrysmod_common\helpers\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -123,7 +123,7 @@
     <IntDir>x86\Release\intermediate\gmsv_proc\</IntDir>
     <TargetName>gmsv_proc_win32</TargetName>
     <TargetExt>.dll</TargetExt>
-    <IncludePath>..\..\..\..\..\..\..\Documents\GitHub\garrysmod_common\include;..\..\..\..\..\..\..\Documents\GitHub\garrysmod_common\helpers\include;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\..\garrysmod_common\include;..\..\..\..\garrysmod_common\helpers\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -131,7 +131,7 @@
     <IntDir>x86_64\Debug\intermediate\gmsv_proc\</IntDir>
     <TargetName>gmsv_proc_win64</TargetName>
     <TargetExt>.dll</TargetExt>
-    <IncludePath>..\..\..\..\..\..\..\Documents\GitHub\garrysmod_common\include;..\..\..\..\..\..\..\Documents\GitHub\garrysmod_common\helpers\include;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\..\garrysmod_common\include;..\..\..\..\garrysmod_common\helpers\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
@@ -139,7 +139,7 @@
     <IntDir>x86\Debug\intermediate\gmsv_proc\</IntDir>
     <TargetName>gmsv_proc_win32</TargetName>
     <TargetExt>.dll</TargetExt>
-    <IncludePath>..\..\..\..\..\..\..\Documents\GitHub\garrysmod_common\include;..\..\..\..\..\..\..\Documents\GitHub\garrysmod_common\helpers\include;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\..\garrysmod_common\include;..\..\..\..\garrysmod_common\helpers\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseWithSymbols|x64'">
     <ClCompile>
@@ -290,10 +290,10 @@
     <ClCompile Include="..\..\..\source\main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\..\..\..\Documents\GitHub\garrysmod_common\projects\windows\vs2019\helpers.vcxproj">
+    <ProjectReference Include="..\..\..\..\garrysmod_common\projects\windows\vs2019\helpers.vcxproj">
       <Project>{F8D0E23C-64B0-61D8-6DC8-ECAED926C839}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\..\..\..\Documents\GitHub\garrysmod_common\projects\windows\vs2019\lua_shared.vcxproj">
+    <ProjectReference Include="..\..\..\..\garrysmod_common\projects\windows\vs2019\lua_shared.vcxproj">
       <Project>{5D4BA350-4903-E59D-B20A-BEF99EE17F8E}</Project>
     </ProjectReference>
   </ItemGroup>

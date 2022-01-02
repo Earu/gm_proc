@@ -1,13 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
+# Visual Studio 16
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gmsv_proc", "gmsv_proc.vcxproj", "{B520D616-218B-8A8D-6AC9-3B33D67268E2}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "garrysmod_common", "garrysmod_common", "{2C3D1EE4-1837-4736-01A4-DD46ED3CADA2}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "helpers", "..\..\..\..\..\..\..\Documents\GitHub\garrysmod_common\projects\windows\vs2019\helpers.vcxproj", "{F8D0E23C-64B0-61D8-6DC8-ECAED926C839}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "helpers", "..\..\..\..\garrysmod_common\projects\windows\vs2019\helpers.vcxproj", "{F8D0E23C-64B0-61D8-6DC8-ECAED926C839}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lua_shared", "..\..\..\..\..\..\..\Documents\GitHub\garrysmod_common\projects\windows\vs2019\lua_shared.vcxproj", "{5D4BA350-4903-E59D-B20A-BEF99EE17F8E}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lua_shared", "..\..\..\..\garrysmod_common\projects\windows\vs2019\lua_shared.vcxproj", "{5D4BA350-4903-E59D-B20A-BEF99EE17F8E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

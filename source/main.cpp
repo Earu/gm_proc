@@ -97,7 +97,7 @@ BOOL CALLBACK EnumWindowsCallback(HWND handle, LPARAM lParam)
 
 HWND FindMainWindow(DWORD pid)
 {
-    HandleData data;
+    HandleData data = HandleData();
     data.process_id = pid;
     data.window_handle = 0;
     EnumWindows(EnumWindowsCallback, (LPARAM)&data);
@@ -182,9 +182,23 @@ std::vector<int> runningPids = std::vector<int>();
 LUA_FUNCTION(StartProcess) 
 {
 #ifdef _WIN32 
-    const char* path = LUA->CheckString(-1);
-    const char* params = LUA->Top() > 1 && LUA->GetType(-2) == (int)GarrysMod::Lua::Type::String ? LUA->GetString(-2) : "";
-    const char* workingDirectory = LUA->Top() > 2 && LUA->GetType(3) == (int)GarrysMod::Lua::Type::String ? LUA->GetString(-3) : NULL;
+    const int top = LUA->Top();
+    const char* path = nullptr;
+    const char* params = nullptr;
+    const char* workingDirectory = nullptr;
+
+    if (top >= 3)  {
+        path = LUA->CheckString(-3);
+        params = LUA->CheckString(-2);
+        workingDirectory = LUA->CheckString(-1);
+    }
+    else if (top == 2) {
+        path = LUA->CheckString(-2);
+        params = LUA->CheckString(-1);
+    }
+    else {
+        path = LUA->CheckString(-1);
+    }
 
     SHELLEXECUTEINFO exInfo = { sizeof(exInfo) };
     exInfo.lpVerb = "open";
@@ -193,7 +207,7 @@ LUA_FUNCTION(StartProcess)
     exInfo.lpDirectory = workingDirectory;
     exInfo.nShow = SW_SHOW;
     exInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
-    exInfo.hwnd = NULL;
+    exInfo.hwnd = nullptr;
     exInfo.cbSize = sizeof exInfo;
     
     if (ShellExecuteExA(&exInfo) && exInfo.hProcess) {
@@ -239,8 +253,9 @@ LUA_FUNCTION(EndProcess)
 {
 #ifdef _WIN32
     const bool exitCodeSpecified = LUA->Top() >= 2;
-    int pid = static_cast<int>(LUA->CheckNumber(-1));
     int exitCode = exitCodeSpecified ? static_cast<int>(LUA->CheckNumber(-1)) : 0;
+    int pid = static_cast<int>(LUA->CheckNumber(exitCodeSpecified ? -2 : -1));
+
     BOOL success = TerminateProcessEx(pid, exitCode);
     LUA->PushBool(success == TRUE ? true : false);
     return 1;
@@ -258,7 +273,7 @@ LUA_FUNCTION(FindProcessPIDs)
 
     HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0); //all processes
 
-    PROCESSENTRY32W entry; //current process
+    PROCESSENTRY32W entry = PROCESSENTRY32W(); //current process
     entry.dwSize = sizeof entry;
 
     LUA->CreateTable();
