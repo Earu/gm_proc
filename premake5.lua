@@ -9,6 +9,6 @@ local gmcommon = assert(_OPTIONS.gmcommon or os.getenv("GARRYSMOD_COMMON"),
 include(path.join(gmcommon, "generator.v3.lua"))
 
 CreateWorkspace({name = "proc"})
-	includedirs({"source", "include"})
+	includedirs({"include"})
 	CreateProject({serverside = true})
 		IncludeLuaShared()
