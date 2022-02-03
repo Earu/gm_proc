@@ -7,7 +7,7 @@ use sysinfo::{SystemExt, ProcessExt};
 
 mod chad_cell; // 😎
 
-#[cfg(target_os = "unix")]
+#[cfg(unix)]
 mod unix;
 
 #[cfg(target_os = "windows")]
@@ -17,7 +17,7 @@ mod windows;
 
 static mut PROCESSES: ChadCell<Vec<u32>> = ChadCell::new(Vec::new());
 
-#[cfg(target_os = "unix")]
+#[cfg(unix)]
 fn spawn_process(path: &str, params: Option<Cow<'_, str>>, working_directory: Option<Cow<'_, str>>) -> Result<u32, std::io::Error> {
     unix::spawn_process(path, params, working_directory)
 }
@@ -91,8 +91,13 @@ unsafe fn terminate_process(lua: gmod::lua::State) -> i32 {
         }
     };
 
+    if pid <= 0 {
+        lua.push_boolean(false);
+        return 1;
+    }
+
     let system = sysinfo::System::new_with_specifics(sysinfo::RefreshKind::new().with_processes());
-    match system.get_process(pid as usize) {
+    match system.get_process((pid as usize).try_into().unwrap()) {
         Some(proc) => {
             let signal = signal_from_int(exit_code as i32);
             let success = proc.kill(signal);
@@ -126,8 +131,13 @@ unsafe fn find_process_pids(lua: gmod::lua::State) -> i32 {
 #[lua_function]
 unsafe fn is_process_running(lua: gmod::lua::State) -> i32 {
     let pid = lua.check_integer(-1);
+    if pid <= 0 {
+        lua.push_boolean(false);
+        return 1;
+    }
+
     let system = sysinfo::System::new_with_specifics(sysinfo::RefreshKind::new().with_processes());
-    match system.get_process(pid as usize) {
+    match system.get_process((pid as usize).try_into().unwrap()) {
         Some(_proc) => lua.push_boolean(true),
         None => lua.push_boolean(false),
     }
@@ -141,7 +151,7 @@ unsafe fn get_running_process_pids(lua: gmod::lua::State) -> i32 {
 
     let system = sysinfo::System::new_with_specifics(sysinfo::RefreshKind::new().with_processes());
     for pid in PROCESSES.get_mut().iter_mut() {
-        match system.get_process(*pid as usize) {
+        match system.get_process((*pid as usize).try_into().unwrap()) {
             Some(proc) => {
                 let process_name = proc.name();
 
@@ -159,6 +169,11 @@ unsafe fn get_running_process_pids(lua: gmod::lua::State) -> i32 {
 #[lua_function]
 unsafe fn is_process_gmod_child(lua: gmod::lua::State) -> i32 {
     let pid = lua.check_integer(-1);
+    if pid <= 0 {
+        lua.push_boolean(false);
+        return 1;
+    }
+
     let system = sysinfo::System::new_with_specifics(sysinfo::RefreshKind::new().with_processes());
     let gmod_pid = match sysinfo::get_current_pid() {
         Ok(pid) => pid,
@@ -168,7 +183,7 @@ unsafe fn is_process_gmod_child(lua: gmod::lua::State) -> i32 {
         }
     };
 
-    match system.get_process(pid as usize) {
+    match system.get_process((pid as usize).try_into().unwrap()) {
         Some(proc) => {
             match proc.parent() {
                 None => lua.push_boolean(false),
@@ -195,6 +210,11 @@ unsafe fn get_gmod_pid(lua: gmod::lua::State) -> i32 {
 #[lua_function]
 unsafe fn bring_process_to_front(lua: gmod::lua::State) -> i32 {
     let pid = lua.check_integer(-1);
+    if pid <= 0 {
+        lua.push_boolean(false);
+        return 1;
+    }
+
     match windows::find_main_window(pid as u32) {
         Some(hwnd) =>  lua.push_boolean(windows::bring_to_front(hwnd)),
         None => lua.push_boolean(false),
@@ -203,17 +223,23 @@ unsafe fn bring_process_to_front(lua: gmod::lua::State) -> i32 {
     1
 }
 
-#[cfg(target_os = "unix")]
+#[cfg(unix)]
 #[lua_function]
 unsafe fn bring_process_to_front(lua: gmod::lua::State) -> i32 {
     // nothing on unix unless someone implements it
-    0
+    lua.push_boolean(false);
+    1
 }
 
 #[cfg(target_os = "windows")]
 #[lua_function]
 unsafe fn bring_process_to_back(lua: gmod::lua::State) -> i32 {
     let pid = lua.check_integer(-1);
+    if pid <= 0 {
+        lua.push_boolean(false);
+        return 1;
+    }
+
     match windows::find_main_window(pid as u32) {
         Some(hwnd) => lua.push_boolean(windows::bring_to_back(hwnd)),
         None => lua.push_boolean(false),
@@ -222,11 +248,12 @@ unsafe fn bring_process_to_back(lua: gmod::lua::State) -> i32 {
     1
 }
 
-#[cfg(target_os = "unix")]
+#[cfg(unix)]
 #[lua_function]
 unsafe fn bring_process_to_back(lua: gmod::lua::State) -> i32 {
     // nothing on unix unless someone implements it
-    0
+    lua.push_boolean(false);
+    1
 }
 
 #[gmod13_open]
@@ -270,7 +297,7 @@ unsafe fn gmod13_open(lua: gmod::lua::State) -> i32 {
 unsafe fn gmod13_close(_: gmod::lua::State) -> i32 {
     let system = sysinfo::System::new_with_specifics(sysinfo::RefreshKind::new().with_processes());
     for pid in PROCESSES.get_mut().iter_mut() {
-        match system.get_process(*pid as usize) {
+        match system.get_process((*pid as usize).try_into().unwrap()) {
             Some(proc) => { proc.kill(sysinfo::Signal::Kill); },
             None => continue,
         }
