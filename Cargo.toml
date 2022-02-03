@@ -1,0 +1,14 @@
+[package]
+name = "gm_proc"
+authors = ["Earu"]
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+gmod = { version = "*", default-features = false, features = ["gmcl"] }
+sysinfo = "0.14.13"
+winapi = "0.3.9"
+user32-sys = "0.2.0"
