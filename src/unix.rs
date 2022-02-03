@@ -1,5 +1,4 @@
-use std::os::unix::process::CommandExt;
-use std::process::Child;
+use std::borrow::Cow;
 use std::process::{Command, Stdio};
 
 pub fn spawn_process(path: &str, params: Option<Cow<'_, str>>, working_directory: Option<Cow<'_, str>>) -> Result<u32, std::io::Error> {
@@ -19,7 +18,6 @@ pub fn spawn_process(path: &str, params: Option<Cow<'_, str>>, working_directory
         .stdin(Stdio::piped())
         .spawn();
 
-    child.exec();
     match child {
         Ok(mut child) => Ok(child.id()),
         Err(e) => Err(e)
