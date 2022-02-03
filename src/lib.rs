@@ -1,7 +1,7 @@
 #![feature(c_unwind)]
 #![feature(exclusive_range_pattern)]
 
-use std::borrow::{Cow};
+use std::borrow::Cow;
 use std::process::{Command, Child};
 
 use chad_cell::ChadCell;
@@ -124,7 +124,7 @@ unsafe fn find_process_pids(lua: gmod::lua::State) -> i32 {
         lua.set_table(-3);
     }
 
-    0
+    1
 }
 
 #[lua_function]
@@ -167,7 +167,27 @@ unsafe fn get_running_process_pids(lua: gmod::lua::State) -> i32 {
 
 #[lua_function]
 unsafe fn is_process_gmod_child(lua: gmod::lua::State) -> i32 {
-    0
+    let pid = lua.check_integer(-1);
+    let system = sysinfo::System::new_with_specifics(sysinfo::RefreshKind::new().with_processes());
+    let gmod_pid = match sysinfo::get_current_pid() {
+        Ok(pid) => pid,
+        Err(_err) => {
+            lua.push_boolean(false);
+            return 1;
+        }
+    };
+
+    match system.get_process(pid as usize) {
+        Some(proc) => {
+            match proc.parent() {
+                None => lua.push_boolean(false),
+                Some(parend_pid) => lua.push_boolean(parend_pid == gmod_pid),
+            }
+        }
+        None => lua.push_boolean(false),
+    }
+
+    1
 }
 
 #[lua_function]
@@ -180,6 +200,7 @@ unsafe fn get_gmod_pid(lua: gmod::lua::State) -> i32 {
             lua.push_integer(-1);
         }
     }
+
     0
 }
 
@@ -203,20 +224,20 @@ unsafe fn gmod13_open(lua: gmod::lua::State) -> i32 {
     lua.push_function(terminate_process);
     lua.set_field(-2, lua_string!("Terminate"));
 
-    lua.push_function(find_process_pids);
-    lua.set_field(-2, lua_string!("FindPIDs"));
-
     lua.push_function(is_process_running);
     lua.set_field(-2, lua_string!("IsRunning"));
 
-    lua.push_function(get_running_process_pids);
-    lua.set_field(-2, lua_string!("GetRunningPIDs"));
+    lua.push_function(find_process_pids);
+    lua.set_field(-2, lua_string!("FindPIDs"));
 
     lua.push_function(is_process_gmod_child);
     lua.set_field(-2, lua_string!("IsFromGmod"));
 
     lua.push_function(get_gmod_pid);
     lua.set_field(-2, lua_string!("GetGmodPID"));
+
+    lua.push_function(get_running_process_pids);
+    lua.set_field(-2, lua_string!("GetRunningPIDs"));
 
     lua.push_function(bring_process_to_front);
     lua.set_field(-2, lua_string!("BringToFront"));
