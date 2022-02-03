@@ -41,10 +41,9 @@ unsafe fn start_process(lua: gmod::lua::State) -> i32 {
 
     let res = {
         let mut cmd = Command::new(path.unwrap().as_ref());
-
         if let Some(args ) = params {
             for arg in args.split(' ') {
-                cmd.arg(arg);
+                cmd.arg(arg.trim());
             }
         }
 
