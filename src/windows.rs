@@ -1,4 +1,4 @@
-use std::{borrow::Cow};
+use std::{borrow::Cow, ffi::CString};
 
 use winapi::{
     shared::{minwindef::{FALSE, BOOL, LPARAM, LPDWORD, TRUE, DWORD}, windef::HWND},
@@ -64,11 +64,22 @@ pub unsafe fn bring_to_back(hwnd: HWND) -> bool {
 }
 
 pub unsafe fn spawn_process(path: &str, params: Option<Cow<'_, str>>, working_directory: Option<Cow<'_, str>>) -> Result<u32, std::io::Error> {
+    let c_path = CString::new(path).unwrap();
+    let c_params = match params {
+        Some(params) => Some(CString::new(params.as_ref()).unwrap()),
+        None => None,
+    };
+
+    let c_working_directory = match working_directory {
+        Some(working_directory) => Some(CString::new(working_directory.as_ref()).unwrap()),
+        None => None,
+    };
+
     let mut info: SHELLEXECUTEINFOA = std::mem::zeroed();
-    info.lpVerb = "open".as_ptr() as *const _;
-    info.lpFile = path.as_ptr() as *const _;
-    info.lpParameters = params.as_ref().map(|p| p.as_ptr() as *const _).unwrap_or(std::ptr::null());
-    info.lpDirectory = working_directory.as_ref().map(|p| p.as_ptr() as *const _).unwrap_or(std::ptr::null());
+    info.lpVerb = "open\0".as_ptr() as *const i8;
+    info.lpFile = c_path.as_ptr();
+    info.lpParameters = if c_params.is_some() { c_params.unwrap().as_ptr() } else { std::ptr::null() };
+    info.lpDirectory = if c_working_directory.is_some() { c_working_directory.unwrap().as_ptr() } else { std::ptr::null() };
     info.nShow = SW_SHOW;
     info.fMask = SEE_MASK_NOCLOSEPROCESS;
     info.hwnd = 0 as HWND;
