@@ -19,7 +19,7 @@ pub fn spawn_process(path: &str, params: Option<Cow<'_, str>>, working_directory
         .spawn();
 
     match child {
-        Ok(mut child) => Ok(child.id()),
+        Ok(child) => Ok(child.id()),
         Err(e) => Err(e)
     }
 }
