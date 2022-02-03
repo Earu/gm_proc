@@ -3,11 +3,12 @@
 
 use std::borrow::Cow;
 use std::process::{Command, Child};
-
 use chad_cell::ChadCell;
 use sysinfo::{SystemExt, ProcessExt};
 
-mod chad_cell;
+#[cfg(target_os = "windows")]
+mod windows;
+mod chad_cell; // 😎
 
 #[macro_use] extern crate gmod;
 
@@ -100,9 +101,7 @@ unsafe fn terminate_process(lua: gmod::lua::State) -> i32 {
             let success = proc.kill(signal);
             lua.push_boolean(success);
         }
-        None => {
-            lua.push_boolean(false);
-        }
+        None => lua.push_boolean(false),
     }
 
     1
@@ -132,12 +131,8 @@ unsafe fn is_process_running(lua: gmod::lua::State) -> i32 {
     let pid = lua.check_integer(-1);
     let system = sysinfo::System::new_with_specifics(sysinfo::RefreshKind::new().with_processes());
     match system.get_process(pid as usize) {
-        Some(_proc) => {
-            lua.push_boolean(true);
-        }
-        None => {
-            lua.push_boolean(false);
-        }
+        Some(_proc) => lua.push_boolean(true),
+        None => lua.push_boolean(false),
     }
 
     1
@@ -162,7 +157,7 @@ unsafe fn get_running_process_pids(lua: gmod::lua::State) -> i32 {
         }
     }
 
-    0
+    1
 }
 
 #[lua_function]
@@ -193,24 +188,48 @@ unsafe fn is_process_gmod_child(lua: gmod::lua::State) -> i32 {
 #[lua_function]
 unsafe fn get_gmod_pid(lua: gmod::lua::State) -> i32 {
     match sysinfo::get_current_pid() {
-        Ok(pid) => {
-            lua.push_number(pid as f64);
-        }
-        Err(_err) => {
-            lua.push_integer(-1);
-        }
+        Ok(pid) => lua.push_number(pid as f64),
+        Err(_err) =>  lua.push_integer(-1),
     }
 
-    0
+    1
 }
 
+#[cfg(target_os = "windows")]
 #[lua_function]
 unsafe fn bring_process_to_front(lua: gmod::lua::State) -> i32 {
+    let pid = lua.check_integer(-1);
+    match windows::find_main_window(pid as winapi::DWORD) {
+        Some(hwnd) =>  lua.push_boolean(windows::bring_to_front(hwnd)),
+        None => lua.push_boolean(false),
+    }
+
+    1
+}
+
+#[cfg(target_os = "unix")]
+#[lua_function]
+unsafe fn bring_process_to_front(lua: gmod::lua::State) -> i32 {
+    // nothing on unix unless someone implements it
     0
 }
 
+#[cfg(target_os = "windows")]
 #[lua_function]
 unsafe fn bring_process_to_back(lua: gmod::lua::State) -> i32 {
+    let pid = lua.check_integer(-1);
+    match windows::find_main_window(pid as winapi::DWORD) {
+        Some(hwnd) => lua.push_boolean(windows::bring_to_back(hwnd)),
+        None => lua.push_boolean(false),
+    }
+
+    1
+}
+
+#[cfg(target_os = "unix")]
+#[lua_function]
+unsafe fn bring_process_to_back(lua: gmod::lua::State) -> i32 {
+    // nothing on unix unless someone implements it
     0
 }
 

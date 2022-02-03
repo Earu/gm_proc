@@ -10,4 +10,5 @@ crate-type = ["cdylib"]
 [dependencies]
 gmod = { version = "*", default-features = false, features = ["gmcl"] }
 sysinfo = "0.14.13"
-num_enum = "0.5.6"
+winapi = "0.2"
+user32-sys = "0.2.0"
