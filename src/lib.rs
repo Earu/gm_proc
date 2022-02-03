@@ -2,17 +2,30 @@
 #![feature(exclusive_range_pattern)]
 
 use std::borrow::Cow;
-use std::process::{Command, Child};
 use chad_cell::ChadCell;
 use sysinfo::{SystemExt, ProcessExt};
 
+mod chad_cell; // 😎
+
+#[cfg(target_os = "unix")]
+mod unix;
+
 #[cfg(target_os = "windows")]
 mod windows;
-mod chad_cell; // 😎
 
 #[macro_use] extern crate gmod;
 
-static mut PROCESSES: ChadCell<Vec<Child>> = ChadCell::new(Vec::new());
+static mut PROCESSES: ChadCell<Vec<u32>> = ChadCell::new(Vec::new());
+
+#[cfg(target_os = "unix")]
+fn spawn_process(path: &str, params: Option<Cow<'_, str>>, working_directory: Option<Cow<'_, str>>) -> Result<u32, std::io::Error> {
+    unix::spawn_process(path, params, working_directory)
+}
+
+#[cfg(target_os = "windows")]
+unsafe fn spawn_process(path: &str, params: Option<Cow<'_, str>>, working_directory: Option<Cow<'_, str>>) -> Result<u32, std::io::Error> {
+    windows::spawn_process(path, params, working_directory)
+}
 
 #[lua_function]
 unsafe fn start_process(lua: gmod::lua::State) -> i32 {
@@ -39,25 +52,10 @@ unsafe fn start_process(lua: gmod::lua::State) -> i32 {
         }
     }
 
-    let res = {
-        let mut cmd = Command::new(path.unwrap().as_ref());
-        if let Some(args ) = params {
-            for arg in args.split(' ') {
-                cmd.arg(arg.trim());
-            }
-        }
-
-        if let Some(dir) = working_directory {
-            cmd.current_dir(std::path::PathBuf::from(dir.as_ref()));
-        }
-
-        cmd.spawn()
-    };
-
+    let res = spawn_process(path.unwrap().as_ref(), params, working_directory);
     match res {
-        Ok(child_handle) => {
-            let pid = child_handle.id();
-            PROCESSES.get_mut().push(child_handle);
+        Ok(pid) => {
+            PROCESSES.get_mut().push(pid);
 
             lua.push_boolean(true);
             lua.push_number(pid as f64);
@@ -142,14 +140,13 @@ unsafe fn get_running_process_pids(lua: gmod::lua::State) -> i32 {
     lua.new_table();
 
     let system = sysinfo::System::new_with_specifics(sysinfo::RefreshKind::new().with_processes());
-    for child in PROCESSES.get_mut().iter_mut() {
-        let pid = child.id() as usize;
-        match system.get_process(pid) {
+    for pid in PROCESSES.get_mut().iter_mut() {
+        match system.get_process(*pid as usize) {
             Some(proc) => {
                 let process_name = proc.name();
 
                 lua.push_string(process_name);
-                lua.push_integer(pid as isize);
+                lua.push_integer(*pid as isize);
                 lua.set_table(-3);
             }
             None => continue,
@@ -198,7 +195,7 @@ unsafe fn get_gmod_pid(lua: gmod::lua::State) -> i32 {
 #[lua_function]
 unsafe fn bring_process_to_front(lua: gmod::lua::State) -> i32 {
     let pid = lua.check_integer(-1);
-    match windows::find_main_window(pid as winapi::DWORD) {
+    match windows::find_main_window(pid as u32) {
         Some(hwnd) =>  lua.push_boolean(windows::bring_to_front(hwnd)),
         None => lua.push_boolean(false),
     }
@@ -217,7 +214,7 @@ unsafe fn bring_process_to_front(lua: gmod::lua::State) -> i32 {
 #[lua_function]
 unsafe fn bring_process_to_back(lua: gmod::lua::State) -> i32 {
     let pid = lua.check_integer(-1);
-    match windows::find_main_window(pid as winapi::DWORD) {
+    match windows::find_main_window(pid as u32) {
         Some(hwnd) => lua.push_boolean(windows::bring_to_back(hwnd)),
         None => lua.push_boolean(false),
     }
@@ -271,8 +268,12 @@ unsafe fn gmod13_open(lua: gmod::lua::State) -> i32 {
 
 #[gmod13_close]
 unsafe fn gmod13_close(_: gmod::lua::State) -> i32 {
-    for child in PROCESSES.get_mut().iter_mut() {
-        child.kill().unwrap();
+    let system = sysinfo::System::new_with_specifics(sysinfo::RefreshKind::new().with_processes());
+    for pid in PROCESSES.get_mut().iter_mut() {
+        match system.get_process(*pid as usize) {
+            Some(proc) => { proc.kill(sysinfo::Signal::Kill); },
+            None => continue,
+        }
     }
 
     0
