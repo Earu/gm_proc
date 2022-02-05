@@ -1,19 +1,16 @@
 #![feature(c_unwind)]
 #![feature(exclusive_range_pattern)]
+#[macro_use] extern crate gmod;
 
 use std::borrow::Cow;
 use chad_cell::ChadCell;
 use sysinfo::{SystemExt, ProcessExt};
 
 mod chad_cell; // 😎
-
 #[cfg(unix)]
 mod unix;
-
 #[cfg(target_os = "windows")]
 mod windows;
-
-#[macro_use] extern crate gmod;
 
 static mut PROCESSES: ChadCell<Vec<u32>> = ChadCell::new(Vec::new());
 
@@ -226,8 +223,18 @@ unsafe fn bring_process_to_front(lua: gmod::lua::State) -> i32 {
 #[cfg(unix)]
 #[lua_function]
 unsafe fn bring_process_to_front(lua: gmod::lua::State) -> i32 {
-    // nothing on unix unless someone implements it
-    lua.push_boolean(false);
+    let pid = lua.check_integer(-1);
+    if pid <= 0 {
+        lua.push_boolean(false);
+        return 1;
+    }
+
+    let res = unix::bring_window_to_front(pid as u64);
+    match res {
+        Ok(success) => lua.push_boolean(success), // success for xlib functionning as expected
+        Err(e) => lua.error(e.to_string()), // errors from xlib not installed
+    }
+
     1
 }
 
@@ -251,8 +258,18 @@ unsafe fn bring_process_to_back(lua: gmod::lua::State) -> i32 {
 #[cfg(unix)]
 #[lua_function]
 unsafe fn bring_process_to_back(lua: gmod::lua::State) -> i32 {
-    // nothing on unix unless someone implements it
-    lua.push_boolean(false);
+    let pid = lua.check_integer(-1);
+    if pid <= 0 {
+        lua.push_boolean(false);
+        return 1;
+    }
+
+    let res = unix::bring_process_to_back(pid as u64);
+    match res {
+        Ok(success) => lua.push_boolean(success), // success for xlib functionning as expected
+        Err(e) => lua.error(e.to_string()), // errors from xlib not installed
+    }
+
     1
 }
 
