@@ -1,5 +1,5 @@
 # gm_proc
-Manage (Windows) processes from Garry's Mod.
+Cross-platform process management module for Garry's Mod.
 
 ### Usage
 (success: **bool**, pid: **number**) `Process.Start`(path: **string**, parameters?: **string**, working_directory?: **string**)
@@ -39,10 +39,13 @@ end
 ```
 
 ### Compiling
-1) Get [premake](https://github.com/premake/premake-core/releases/download/v5.0.0-alpha14/premake-5.0.0-alpha14-linux.tar.gz) add it to your `PATH`
-2) Get [garrysmod_common](https://github.com/danielga/garrysmod_common) (with `git clone https://github.com/danielga/garrysmod_common --recursive --branch=x86-64-support-sourcesdk`) and set an env var called `GARRYSMOD_COMMON` to the path of the local repo
-3) Run `premake5 vs2019` in your local copy of **this** repo
-4) Navigate to the project directory `cd /projects/windows/vs2019`
-5) Open the .sln in Visual Studio 2019+
-6) Select Release, and either x64 or x86
-7) Build
+- Open a terminal
+- Install **cargo** if you dont have it (on Windows => https://win.rustup.rs) (on Linux/Macos => curl https://sh.rustup.rs -sSf | sh)
+- Get [git](https://git-scm.com/downloads) or download the archive for the repository directly
+- `git clone https://github.com/Earu/gm_zip` (ignore this if you've downloaded the archive)
+- Run `cd gm_zip`
+- `cargo build`
+- Go in `target/debug` and rename the binary according to your branch and realm (gmsv_zip_win64.dll, gmcl_zip_win64.dll, gmsv_zip_linux.dll, gmcl_zip_linux.dll, gmcl_zip_osx64.dll)
+- Put the binary in your gmod `lua/bin` directory
+
+*Note: Even on other platforms than Windows the extension of your modules **needs** to be **.dll***

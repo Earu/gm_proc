@@ -49,7 +49,6 @@ unsafe fn start_process(lua: gmod::lua::State) -> i32 {
         }
     }
 
-
     let res = spawn_process(path.unwrap().as_ref(), params, working_directory);
     match res {
         Ok(pid) => {
