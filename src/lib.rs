@@ -2,21 +2,42 @@
 #![feature(exclusive_range_pattern)]
 #[macro_use] extern crate gmod;
 
+use std::process::Command;
+use std::process::Stdio;
 use std::borrow::Cow;
 use chad_cell::ChadCell;
 use sysinfo::{SystemExt, ProcessExt};
 
 mod chad_cell; // 😎
-#[cfg(unix)]
-mod unix;
+#[cfg(target_os = "linux")]
+mod linux;
 #[cfg(target_os = "windows")]
 mod windows;
 
 static mut PROCESSES: ChadCell<Vec<u32>> = ChadCell::new(Vec::new());
 
-#[cfg(unix)]
+#[cfg(unix)] // this will work for macos and linux
 fn spawn_process(path: &str, params: Option<Cow<'_, str>>, working_directory: Option<Cow<'_, str>>) -> Result<u32, std::io::Error> {
-    unix::spawn_process(path, params, working_directory)
+    let mut cmd = Command::new(path);
+    if let Some(args ) = params {
+        for arg in args.split(' ') {
+            cmd.arg(arg.trim());
+        }
+    }
+
+    if let Some(dir) = working_directory {
+        cmd.current_dir(std::path::PathBuf::from(dir.as_ref()));
+    }
+
+    let child = cmd.stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .stdin(Stdio::piped())
+        .spawn();
+
+    match child {
+        Ok(child) => Ok(child.id()),
+        Err(e) => Err(e)
+    }
 }
 
 #[cfg(target_os = "windows")]
@@ -220,7 +241,14 @@ unsafe fn bring_process_to_front(lua: gmod::lua::State) -> i32 {
     1
 }
 
-#[cfg(unix)]
+#[cfg(target_os = "macos")]
+#[lua_function]
+unsafe fn bring_process_to_front(lua: gmod::lua::State) -> i32 {
+    lua.push_boolean(false);
+    1
+}
+
+#[cfg(target_os = "linux")]
 #[lua_function]
 unsafe fn bring_process_to_front(lua: gmod::lua::State) -> i32 {
     let pid = lua.check_integer(-1);
@@ -229,7 +257,7 @@ unsafe fn bring_process_to_front(lua: gmod::lua::State) -> i32 {
         return 1;
     }
 
-    let res = unix::bring_window_to_front(pid as u64);
+    let res = linux::bring_window_to_front(pid as u64);
     match res {
         Ok(success) => lua.push_boolean(success), // success for xlib functionning as expected
         Err(e) => lua.error(e.to_string()), // errors from xlib not installed
@@ -255,7 +283,14 @@ unsafe fn bring_process_to_back(lua: gmod::lua::State) -> i32 {
     1
 }
 
-#[cfg(unix)]
+#[cfg(target_os = "macos")]
+#[lua_function]
+unsafe fn bring_process_to_back(lua: gmod::lua::State) -> i32 {
+    lua.push_boolean(false);
+    1
+}
+
+#[cfg(target_os = "linux")]
 #[lua_function]
 unsafe fn bring_process_to_back(lua: gmod::lua::State) -> i32 {
     let pid = lua.check_integer(-1);
@@ -264,7 +299,7 @@ unsafe fn bring_process_to_back(lua: gmod::lua::State) -> i32 {
         return 1;
     }
 
-    let res = unix::bring_process_to_back(pid as u64);
+    let res = linux::bring_process_to_back(pid as u64);
     match res {
         Ok(success) => lua.push_boolean(success), // success for xlib functionning as expected
         Err(e) => lua.error(e.to_string()), // errors from xlib not installed

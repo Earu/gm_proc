@@ -1,6 +1,4 @@
-use std::borrow::Cow;
 use std::io::{Error, ErrorKind};
-use std::process::{Command, Stdio};
 
 use x11::xlib::{
     XOpenDisplay,
@@ -23,29 +21,6 @@ use x11::xlib::{
     XLowerWindow,
     RevertToPointerRoot
 };
-
-pub fn spawn_process(path: &str, params: Option<Cow<'_, str>>, working_directory: Option<Cow<'_, str>>) -> Result<u32, std::io::Error> {
-	let mut cmd = Command::new(path);
-    if let Some(args ) = params {
-        for arg in args.split(' ') {
-            cmd.arg(arg.trim());
-        }
-    }
-
-    if let Some(dir) = working_directory {
-        cmd.current_dir(std::path::PathBuf::from(dir.as_ref()));
-    }
-
-    let child = cmd.stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .stdin(Stdio::piped())
-        .spawn();
-
-    match child {
-        Ok(child) => Ok(child.id()),
-        Err(e) => Err(e)
-    }
-}
 
 unsafe fn search_windows(display: *mut _XDisplay, pid: u64, atom_pid: u64, window: Window, results: &mut Vec<Window>) {
     // get the PID for the current Window.
